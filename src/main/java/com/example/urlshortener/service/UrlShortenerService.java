@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.urlshortener.kafka.ClickEventProducer;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class UrlShortenerService {
     private final UrlRepository urlRepository;
     private final ClickAnalyticsRepository analyticsRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final ClickEventProducer clickEventProducer;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -32,13 +34,16 @@ public class UrlShortenerService {
 
     private final AtomicLong counter = new AtomicLong(1_000_000_000L);
 
+
     public UrlShortenerService(
             UrlRepository urlRepository,
             ClickAnalyticsRepository analyticsRepository,
-            RedisTemplate<String, String> redisTemplate) {
+            RedisTemplate<String, String> redisTemplate,
+            ClickEventProducer clickEventProducer) {  // ADD THIS
         this.urlRepository = urlRepository;
         this.analyticsRepository = analyticsRepository;
         this.redisTemplate = redisTemplate;
+        this.clickEventProducer = clickEventProducer;  // ADD THIS
     }
 
     private String encode(long id) {
@@ -184,14 +189,11 @@ public class UrlShortenerService {
 
     // ── PRIVATE HELPER ───────────────────────────────────────────────────────
 
+
+
     private void recordClick(String code, String ipAddress, String userAgent) {
-        urlRepository.incrementClickCount(code);
-        urlRepository.findByShortCodeAndActiveTrue(code).ifPresent(url -> {
-            ClickAnalytics analytics = new ClickAnalytics();
-            analytics.setUrl(url);
-            analytics.setIpAddress(ipAddress);
-            analytics.setUserAgent(userAgent);
-            analyticsRepository.save(analytics);
-        });
+        // Sirf Kafka pe publish karo — instant return
+        // Consumer background mein DB save karega
+        clickEventProducer.publishClickEvent(code, ipAddress, userAgent);
     }
 }
