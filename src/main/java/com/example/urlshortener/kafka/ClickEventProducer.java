@@ -26,7 +26,7 @@ public class ClickEventProducer {
         // Kafka pe bhejo — NON-BLOCKING
         // Ye method immediately return karta hai
         // DB write ka wait NAHI karta
-        kafkaTemplate.send(TOPIC, shortCode, event);
+       // kafkaTemplate.send(TOPIC, shortCode, event);
 
         System.out.println("Click event published to Kafka: " + shortCode);
     }
