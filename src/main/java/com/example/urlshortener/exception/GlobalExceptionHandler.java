@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
         }
 
         // URL not found?
-        if (ex.getMessage() != null && ex.getMessage().contains("nahi mili")) {
+        if (ex.getMessage() != null && ex.getMessage().contains("NOT FOUND")) {
             return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
         }
 
