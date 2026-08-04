@@ -197,19 +197,24 @@ public class UrlShortenerService {
     //     // Consumer background mein DB save karega
     //     clickEventProducer.publishClickEvent(code, ipAddress, userAgent);
     // }
-     private void recordClick(String code, String ip, String userAgent) {
+   private void recordClick(String code, String ipAddress, String userAgent) {
     try {
-        clickEventProducer.publishClickEvent(code, ip, userAgent);
+        // Try Kafka first (async)
+        clickEventProducer.publishClickEvent(code, ipAddress, userAgent);
     } catch (Exception e) {
-        // Kafka nahi hai — synchronous fallback
-        urlRepository.findByShortCodeAndActiveTrue(code).ifPresent(url -> {
+        // Kafka nahi hai — direct DB write fallback
+        try {
             urlRepository.incrementClickCount(code);
-            ClickAnalytics analytics = new ClickAnalytics();
-            analytics.setUrl(url);
-            analytics.setIpAddress(ip);
-            analytics.setUserAgent(userAgent);
-            analyticsRepository.save(analytics);
-        });
+            urlRepository.findByShortCodeAndActiveTrue(code).ifPresent(url -> {
+                ClickAnalytics analytics = new ClickAnalytics();
+                analytics.setUrl(url);
+                analytics.setIpAddress(ipAddress);
+                analytics.setUserAgent(userAgent);
+                analyticsRepository.save(analytics);
+            });
+        } catch (Exception dbEx) {
+            System.out.println("Analytics failed: " + dbEx.getMessage());
+        }
     }
 }
 }
