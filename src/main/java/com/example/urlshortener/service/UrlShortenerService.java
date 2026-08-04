@@ -192,9 +192,24 @@ public class UrlShortenerService {
 
 
 
-    private void recordClick(String code, String ipAddress, String userAgent) {
-        // Sirf Kafka pe publish karo — instant return
-        // Consumer background mein DB save karega
-        clickEventProducer.publishClickEvent(code, ipAddress, userAgent);
+    // private void recordClick(String code, String ipAddress, String userAgent) {
+    //     // Sirf Kafka pe publish karo — instant return
+    //     // Consumer background mein DB save karega
+    //     clickEventProducer.publishClickEvent(code, ipAddress, userAgent);
+    // }
+     private void recordClick(String code, String ip, String userAgent) {
+    try {
+        clickEventProducer.publishClickEvent(code, ip, userAgent);
+    } catch (Exception e) {
+        // Kafka nahi hai — synchronous fallback
+        urlRepository.findByShortCodeAndActiveTrue(code).ifPresent(url -> {
+            urlRepository.incrementClickCount(code);
+            ClickAnalytics analytics = new ClickAnalytics();
+            analytics.setUrl(url);
+            analytics.setIpAddress(ip);
+            analytics.setUserAgent(userAgent);
+            analyticsRepository.save(analytics);
+        });
     }
+}
 }

@@ -1,14 +1,14 @@
-# Maven build folder
+# Maven
 target/
 
-# IntelliJ files
+# IntelliJ
 .idea/
 *.iml
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Secrets — kabhi push mat karo
+# Secrets
 .env
 application-prod.properties
